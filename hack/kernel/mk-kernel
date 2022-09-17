@@ -1,5 +1,8 @@
 #!/bin/bash
 set -e
+set -x
+
+echo "Building ${KERNEL_PREFIX} kernel v${KERNEL_VERSION} with ${KERNEL_CONFIG}..."
 
 workingDir=$(mktemp -d)
 thisDir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
@@ -8,8 +11,6 @@ function clean {
     rm -rf $workingDir
 }
 trap clean EXIT
-
-source config.sh
 
 TARGET_DIR=${TARGET_DIR:-$thisDir/../../target}
 
@@ -30,12 +31,22 @@ wget -qO- --show-progress "https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-${
     tar xJ
 cp "$thisDir/config/$KERNEL_CONFIG" linux-${KERNEL_VERSION}/.config
 pushd linux-${KERNEL_VERSION}
-make -j`nproc`
 
-mkdir -p ${TARGET_DIR}/kernel
-cp -v arch/x86/boot/bzImage ${TARGET_DIR}/kernel/vmlinuz-$KERNEL_VERSION
-cp -v System.map ${TARGET_DIR}/kernel/System.map-$KERNEL_VERSION
-cp -v .config ${TARGET_DIR}/kernel/config-$KERNEL_VERSION
+case $KERNEL_PREFIX in
+    firecracker)
+        make vmlinux -j`nproc`
+        mkdir -p ${TARGET_DIR}/kernel
+        cp -v vmlinux ${TARGET_DIR}/kernel/${KERNEL_PREFIX}-vmlinux-$KERNEL_VERSION
+        ;;
+
+    *)
+        make -j`nproc`
+        mkdir -p ${TARGET_DIR}/kernel
+        cp -v arch/x86/boot/bzImage ${TARGET_DIR}/kernel/${KERNEL_PREFIX}-vmlinuz-$KERNEL_VERSION
+        ;;
+esac
+cp -v System.map ${TARGET_DIR}/kernel/${KERNEL_PREFIX}-System.map-$KERNEL_VERSION
+cp -v .config ${TARGET_DIR}/kernel/${KERNEL_PREFIX}-config-$KERNEL_VERSION
 
 
 popd # linux src

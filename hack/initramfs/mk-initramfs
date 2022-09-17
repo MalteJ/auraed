@@ -8,7 +8,6 @@ ROOTFS_DIR=${thisDir}/../../target/rootfs
 [ ! -d "${TARGET_DIR}" ] && echo "Directory: '$TARGET_DIR' does not exist." && exit 1
 
 source utils.sh
-source ../kernel/config.sh
 
 pushd $ROOTFS_DIR 
 echo "Create initramfs folder structure"

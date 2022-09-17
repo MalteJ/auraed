@@ -9,8 +9,6 @@ function clean {
 }
 trap clean EXIT
 
-source config.sh
-
 pushd $workingDir
 
 echo "Downloading Linux Kernel $KERNEL_VERSION"

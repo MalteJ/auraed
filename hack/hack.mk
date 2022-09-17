@@ -8,10 +8,14 @@ container-release:
 
 kernel:
 	mkdir -p target/rootfs/boot
-	docker run -it --rm -u $${UID} -v "`pwd`:/aurae" aurae-builder bash -c "cd hack/kernel && ./mk-kernel"
+	docker run -it --rm -u $${UID} -v "`pwd`:/aurae" aurae-builder bash -c "cd hack/kernel && KERNEL_EDITION=aurae . config.sh && ./mk-kernel"
+
+firecracker-kernel:
+	mkdir -p target/rootfs/boot
+	docker run -it --rm -u $${UID} -v "`pwd`:/aurae" aurae-builder bash -c "cd hack/kernel && KERNEL_EDITION=firecracker . config.sh  && ./mk-kernel"
 
 menuconfig:
-	docker run -it --rm -u $${UID} -v "`pwd`:/aurae" aurae-builder bash -c "cd hack/kernel && ./mk-menuconfig"
+	docker run -it --rm -u $${UID} -v "`pwd`:/aurae" -e "KERNEL_EDITION=$${KERNEL_EDITION}" aurae-builder bash -c "cd hack/kernel && . config.sh && ./mk-menuconfig"
 
 initramfs: container-release
 	mkdir -p target/rootfs/bin
@@ -33,6 +37,15 @@ virsh-console:
 
 virsh-shutdown:
 	virsh --connect qemu:///system shutdown aurae --mode acpi
+
+firecracker-start:
+	sudo ./hack/firecracker/run.sh
+
+firecracker-stop:
+	[ -f target/firecracker.pid ] && kill `cat target/firecracker.pid`
+	rm -f target/firecracker.pid
+	ip link del tap1
+	ip link del tap0
 
 network:
 	sudo brctl addbr vm-br0
